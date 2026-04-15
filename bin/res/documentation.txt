@@ -1,0 +1,9 @@
+1.0
+Copied all text.
+
+1.1
+Split the single file into multiple files for ease of use.
+Created a new car model.
+Redesigned menu UI partially.
+Added GUIHelper class to helpers package to store helper methods of UI elements.
+Revamped buttons for menu UI.
