@@ -6,6 +6,8 @@ public class Car {
 	public double x, y, speed;
 	public int width = 63; // originally 72
 	public int height = 159; // originally 120
+	// added angle for rotational logic yezzirrrrrrrrrr
+	public double angle = -90.0;
 	public Color color;
 	public String label;
 	
