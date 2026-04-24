@@ -1,6 +1,10 @@
 package group10;
 
 import group10.entities.*; // import lahat dun sa package ng entities
+import group10.helpers.ColorPalette;
+
+import static group10.graphics.BackgroundElements.*;
+import static group10.graphics.CarModels.*;
 import static group10.helpers.GUIHelpers.*;
 
 import javax.imageio.ImageIO;
@@ -10,7 +14,6 @@ import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
@@ -21,17 +24,21 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	private final int WIDTH = 1280;
 	private final int HEIGHT = 760;
 	
+	// CAMERA SYSTEM
+	private int p1CameraY = 0;
+	private int p2CameraY = 0;
+	
 	// 60fps (1000ms/16 == 62.5 approximated to 60)
 	private final Timer timer = new Timer(16, this);
 	private final Random random = new Random();
 	
 	private ScreenState screenState = ScreenState.MENU;
 	
-	// TODO: revamp
-	private int roadX = 350;
-	private final int roadWidth = 580;
-	private final int laneWidth = roadWidth / 2;
-	private final int finishY = 110;
+	// ROAD VARIABLES
+	private final int roadWidth = 360;
+	private final int lrX = 140;
+	private final int rrX = 780;
+    private int finishY = 1000;
 	
 	// BUTTONS
 	// MENU BUTTONS
@@ -79,12 +86,12 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	private final Rectangle colorsWindow = new Rectangle(uiX - 235, uiY + 55, 215, 200);
 	
 	// TODO: add car color logic per player
-	private final String[] hexCarColorPalette = { "#FF0000", "#FFA500", "#FFFF00", "#008000", "#008080", "#800080", "#964B00", "#FFFFFF", "#000000" };
+	ColorPalette[] palette = ColorPalette.values();
 	private final List<Rectangle> colorsWindowSelection = new ArrayList<>();
-	private int colorButStartX = 920;
-	private int colorButStartY = 105;
+	private int colorButStartX = 400;
+	private int colorButStartY = 235;
 	private int colorButSize = 42; // button is square
-	private int colorButSpacing = 42 / 2;
+	private int colorButSpacing = 64 / 2;
 	// the for loop for this list is inside the constructor
 	
 	private final Rectangle summaryPlayAgainButton = new Rectangle(430, 495, 170, 50);
@@ -124,15 +131,21 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	private int carSelection = 1; // default to normal car, paste this on level start
 	private final Car player1;
 	private final Car player2;
+	private final int carFixedYPos = HEIGHT - 165;
 	
 	private final List<RainDrop> rainDrops = new ArrayList<>();
 	private final List<SnowFlake> snowFlakes = new ArrayList<>();
 	private final List<Cloud> clouds = new ArrayList<>();
 	private final List<Puddle> puddles = new ArrayList<>();
+	private final List<Star> stars = new ArrayList<>();
+	
+	private final ArrayList<BackgroundElement> p1BGE = new ArrayList<>();
+	private final ArrayList<BackgroundElement> p2BGE = new ArrayList<>();
 	
 	private double snowLevel = 0;
 	private double wetLevel = 0;
 	
+	// traffic state: red = 0, yellow = 1, green = 2
 	private int trafficState = 0;
 	private int trafficCounter = 0;
 	
@@ -141,25 +154,23 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		setFocusable(true);
 		addKeyListener(this);
 		addMouseListener(this);
-	
-		// try catch block handles errors
-		try {
-			level1Background = ImageIO.read(getClass().getResource("/res/level1.png"));
-		} catch (IOException e) {
-			e.printStackTrace();	// pag nagthrow si java ng IOException, print da reason
-		}
 		
-		for (int row = 0; row < 3; row++) {
-	        for (int col = 0; col < 3; col++) {
+		for (int row = 0; row < 7; row++) {
+	        for (int col = 0; col < 7; col++) {
 	            int currentX = colorButStartX + (col * (colorButSize + colorButSpacing));
 	            int currentY = colorButStartY + (row * (colorButSize + colorButSpacing));
 	            colorsWindowSelection.add(new Rectangle(currentX, currentY, colorButSize, colorButSize));
 	        }
 	    }
 		
-		// TODO: new roads means new placement logic soon too
-		player1 = new Car(roadX + 80, HEIGHT - 165, new Color(225, 55, 55), "P1");
-		player2 = new Car(roadX + laneWidth + 80, HEIGHT - 165, new Color(55, 110, 230), "P2");
+		for (int i = 0; i < 5; i++) {
+		    // spawn trees at x-value outside of view range so you cant see them at first spawn
+		    p1BGE.add(new BackgroundElement(lrX + random.nextInt(roadWidth) - 1000, i * -300));
+		    p2BGE.add(new BackgroundElement(rrX + random.nextInt(roadWidth) - 1000, i * -300));
+		}
+		
+		player1 = new Car(lrX + 100, carFixedYPos, new Color(225, 55, 55), "P1");
+		player2 = new Car(rrX + 100, carFixedYPos, new Color(55, 110, 230), "P2");
 		
 		for (int i = 0; i < 180; i++) {
 			rainDrops.add(new RainDrop(random.nextInt(WIDTH), random.nextInt(HEIGHT), 6 + random.nextInt(8)));
@@ -182,6 +193,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 				12 + random.nextInt(24)
 			));
 		}
+		
+		for (int i = 0; i < 150; i++) {
+			stars.add(new Star(random.nextInt(WIDTH), random.nextInt(HEIGHT), 6 + random.nextInt(8)));
+		}
 	
 		timer.start();
 	}
@@ -190,7 +205,6 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	public void actionPerformed(ActionEvent e) {
 		
 		// updates 60x per second as per the timer
-		updateTrafficLight();
 		updateWeather();
 		updateClouds();
 		updateCountdown();
@@ -204,8 +218,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	            screenState == ScreenState.LEVEL5);
 		
 		if (isPlayingLevel && isRunning && !countdownActive) {
-			System.out.println("UPDATING CARS! P1 UP IS: " + p1Up);
-			updateCars();
+			updatePlayerSides();
 			checkWinner();
 		}
 		
@@ -248,7 +261,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		
 		// TODO: penalize movement under red light, penalize movement but not rotation while yellow
 		trafficCounter++;
-		if (trafficCounter >= 140) {
+		if (trafficCounter >= 300) {
 			trafficCounter = 0;
 			trafficState = (trafficState + 1) % 3;
 		}
@@ -309,38 +322,24 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		}
 	}
 	
-	private void updateCars() {
-		updateSingleCar(player1, p1Up, p1Down, p1Left, p1Right, true);
-		updateSingleCar(player2, p2Up, p2Down, p2Left, p2Right, false);
+	private void updatePlayerSides() {
+		updatePlayerSide(player1, p1Up, p1Down, p1Left, p1Right, true);
+		updatePlayerSide(player2, p2Up, p2Down, p2Left, p2Right, false);
 	}
 	
-	private void updateSingleCar(Car car, boolean up, boolean down, boolean left, boolean right, boolean leftLane) {
-		double accel = 0.18;
-		double maxSpeed = 5.7;
-		double friction = 0.06;
-		double turnSpeed = 3.5;
-		
-		if (isRaining) {
-			maxSpeed = 4.9;
-			accel = 0.14;
-			turnSpeed = 4;
-		}
-		
-		if (isSnowing) {
-			maxSpeed = 4.2;
-			accel = 0.11;
-			friction = 0.035;
-			turnSpeed = 3;
-		}
-		
-		if (wetLevel > 0.6) maxSpeed -= 0.35;
-		if (snowLevel > 0.6) maxSpeed -= 0.45;
-		
-		if (trafficState == 0 && car.y < 280 && car.y > 180) {
-			maxSpeed = Math.min(maxSpeed, 1.0);
-		}
-		
-		// acceleration at braking
+	private void updateCarPhysics(Car car, boolean up, boolean down, boolean left, boolean right) {
+	    double accel = 0.18;
+	    double maxSpeed = 20.0;
+	    double friction = 0.06;
+	    double turnSpeed = 3.5;
+
+	    // weather adjustments, nai-inline ko na yung brackets para mas readable & less lines
+	    if (isRaining) { maxSpeed = 4.9; accel = 0.14; turnSpeed = 4; }
+	    if (isSnowing) { maxSpeed = 4.2; accel = 0.11; friction = 0.035; turnSpeed = 3; }
+	    if (wetLevel > 0.6) maxSpeed -= 0.35;
+	    if (snowLevel > 0.6) maxSpeed -= 0.45;
+
+	    // acceleration at braking
 	    if (up) {
 	    	// while key input ay up, car ay mag-foforward and if it hits yung maxSpeed threshold,
 	    	// di lalampas dun sa number na yon kasi n-aauto set to the maxSpeed yung ating speed
@@ -363,33 +362,83 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	            if (car.speed > 0) car.speed = 0;
 	        }
 	    }
-	    
+
+	    // Steering
 	    if (Math.abs(car.speed) > 0.1) {
 	        double currentTurnSpeed = (car.speed > 0) ? turnSpeed : -turnSpeed;
-	        
 	        if (left) car.angle -= currentTurnSpeed;
 	        if (right) car.angle += currentTurnSpeed;
 	    }
-
+	}
+	
+	private double applyMovement(Car car, boolean leftLane) {
+	    // horizontal movement
 	    car.x += car.speed * Math.cos(Math.toRadians(car.angle));
-	    car.y += car.speed * Math.sin(Math.toRadians(car.angle));
 
-	    if (car.x < roadX) car.x = roadX;
-	    if (car.x > roadX + roadWidth - car.width) car.x = roadX + roadWidth - car.width;
-	    if (car.y < 0) car.y = 0;
-	    if (car.y > HEIGHT - car.height) car.y = HEIGHT - car.height;
+	    // vertical world scrolling i2
+	    double forwardMovement = -(car.speed * Math.sin(Math.toRadians(car.angle)));
+
+	    // update camera of player1 or 2
+	    if (leftLane) {
+	        p1CameraY += forwardMovement;
+	    } else {
+	        p2CameraY += forwardMovement;
+	    }
+
+	    // car ay naka-anchor sa HEIGHT - 165
+	    car.y = carFixedYPos;
+
+	    // boundaries ng road para di makaalis sa road yung car
+	    int currentRoadX = leftLane ? lrX : rrX;
+	    if (car.x < currentRoadX) car.x = currentRoadX;
+	    if (car.x > currentRoadX + roadWidth - car.width) {
+	        car.x = currentRoadX + roadWidth - car.width;
+	    }
+
+	    // returns yung value ng forwardmovement para magamit sa pag-update ng background element
+	    return forwardMovement;
+	}
+	
+	private void updateBackgroundElements(ArrayList<BackgroundElement> elements, double movement, int roadX) {
+	    for (BackgroundElement t : elements) {
+	        t.y += movement;
+
+	        // respawn logic
+	        if (t.y > HEIGHT) {
+	            t.y = -200; 
+	            // randomly place sa ground (left of road at right of road)
+	            boolean spawnOnLeft = random.nextBoolean();
+	            if (spawnOnLeft) {
+	                t.x = roadX - 100 - random.nextInt(100);
+	            } else {
+	                t.x = roadX + roadWidth - 60 + random.nextInt(100);
+	            }
+	        }
+	    }
+	}
+	
+	private void updatePlayerSide(Car car, boolean up, boolean down, boolean left, boolean right, boolean leftLane) {
+		updateCarPhysics(car, up, down, left, right);
+
+	    // dito naistore yung nai-return na forwardmovement sa applyMovement() method
+	    double scrollSpeed = applyMovement(car, leftLane);
+
+	    ArrayList<BackgroundElement> currentElements = leftLane ? p1BGE : p2BGE;
+	    int currentRoadX = leftLane ? lrX : rrX;
+	    
+	    updateBackgroundElements(currentElements, scrollSpeed, currentRoadX);
 	}
 	
 	private void checkWinner() {
-		if (player1.y <= finishY || player2.y <= finishY) {
+		if (p1CameraY >= finishY || p2CameraY >= finishY) {
 			isRunning = false;
 			countdownActive = false;
 			screenState = ScreenState.SUMMARY;
 			roundsPlayed++;
 		
-			if (player1.y <= finishY && player2.y <= finishY) {
+			if (p1CameraY >= finishY && p2CameraY >= finishY) {
 				statusMessage = "It's a tie! Both players reached the finish line.";
-			} else if (player1.y <= finishY) {
+			} else if (p1CameraY >= finishY) {
 				player1Wins++;
 				statusMessage = "Player 1 wins this round!";
 			} else {
@@ -400,13 +449,13 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	}
 	
 	private void resetRacePositions() {
-		player1.x = roadX + 80;
-		player1.y = HEIGHT - 165;
+		player1.x = lrX + (roadWidth - 130);
+		player1.y = carFixedYPos;
 		player1.speed = 0;
 		player1.angle = -90.0;
 		
-		player2.x = roadX + laneWidth + 80;
-		player2.y = HEIGHT - 165;
+		player2.x = rrX + (roadWidth - 130);
+		player2.y = carFixedYPos;
 		player2.speed = 0;
 		player2.angle = -90.0;
 	}
@@ -477,6 +526,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		
+		Shape fullScreen = g2.getClip();
 		if (screenState == ScreenState.MENU) {
 			drawMenuNew(g2);
 			return;
@@ -487,91 +537,27 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 			return;
 		}
 		
-		switch (levelSelection) {
-		case 1 :
-			drawSky(g2);
-			drawSunOrMoon(g2);
-			drawClouds(g2);
-			drawGround(g2);
-			drawAccumulatedWeather(g2);
-			drawTrees(g2);
-			drawTrafficLight(g2);
-			drawCars(g2);
-			drawWeatherEffects(g2);
-			drawHUDSection(g2);
-			drawHUDCarButtons(g2);
-			drawColorsWindow(g2);
-			drawControlsWindow(g2);
-			drawCurrentLevelText(g2);
-			break;
-		case 2 :
-			drawSky(g2);
-			drawSunOrMoon(g2);
-			drawClouds(g2);
-			drawGround(g2);
-			drawAccumulatedWeather(g2);
-			drawTrees(g2);
-			drawTrafficLight(g2);
-			drawCars(g2);
-			drawWeatherEffects(g2);
-			drawHUDSection(g2);
-			drawHUDCarButtons(g2);
-			drawColorsWindow(g2);
-			drawControlsWindow(g2);
-			drawCurrentLevelText(g2);
-			break;
-		case 3 :
-			drawSky(g2);
-			drawSunOrMoon(g2);
-			drawClouds(g2);
-			drawGround(g2);
-			drawAccumulatedWeather(g2);
-			drawTrees(g2);
-			drawTrafficLight(g2);
-			drawCars(g2);
-			drawWeatherEffects(g2);
-			drawHUDSection(g2);
-			drawHUDCarButtons(g2);
-			drawColorsWindow(g2);
-			drawControlsWindow(g2);
-			drawCurrentLevelText(g2);
-			break;
-		case 4 :
-			drawSky(g2);
-			drawSunOrMoon(g2);
-			drawClouds(g2);
-			drawGround(g2);
-			drawAccumulatedWeather(g2);
-			drawTrees(g2);
-			drawTrafficLight(g2);
-			drawCars(g2);
-			drawWeatherEffects(g2);
-			drawHUDSection(g2);
-			drawHUDCarButtons(g2);
-			drawColorsWindow(g2);
-			drawControlsWindow(g2);
-			drawCurrentLevelText(g2);
-			break;
-		case 5 :
-			drawSky(g2);
-			drawSunOrMoon(g2);
-			drawClouds(g2);
-			drawGround(g2);
-			drawAccumulatedWeather(g2);
-			drawTrees(g2);
-			drawTrafficLight(g2);
-			drawCars(g2);
-			drawWeatherEffects(g2);
-			drawHUDSection(g2);
-			drawHUDCarButtons(g2);
-			drawColorsWindow(g2);
-			drawControlsWindow(g2);
-			drawCurrentLevelText(g2);
-			break;
+		if (screenState == ScreenState.CARSELECT) {
+			drawCarSelect(g2);
+			return;
 		}
 		
-		if (level1Background != null) {
-			drawTransparentImage(g2, level1Background, 0, 0, WIDTH, HEIGHT, 0.1f);
+		switch (levelSelection) {
+		case 1 :
+			drawFullScreen(g2);
+			break;
+		case 2 :
+			drawFullScreen(g2);
+			break;
+		case 3 :
+			drawFullScreen(g2);
+			break;
+		case 4 :
+			drawFullScreen(g2);
+			break;
+		case 5 :
+			drawFullScreen(g2);
+			break;
 		}
 		
 		if (countdownActive) {
@@ -581,6 +567,30 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		if (screenState == ScreenState.SUMMARY) {
 			drawSummary(g2);
 		}
+	}
+	private void drawFullScreen(Graphics2D g2) {
+		Shape fullScreen = g2.getClip();
+
+		drawGround(g2);
+		
+	    g2.setClip(0, 0, WIDTH / 2, HEIGHT);   
+	    drawRoad(g2);
+	    drawRoadMarks(g2, true); // true = p1 logic
+	    drawFinishLine(g2, true);
+	    drawCar(g2, player1);
+	    drawBackgroundElements(g2, true);
+
+	    g2.setClip(WIDTH / 2, 0, WIDTH / 2, HEIGHT);
+	    drawRoad(g2);
+	    drawRoadMarks(g2, false); // false = p2 logic
+	    drawFinishLine(g2, false);
+	    drawCar(g2, player2);
+	    drawBackgroundElements(g2, false);
+
+	    g2.setClip(fullScreen); // restore full screen drawing
+	    g2.setColor(Color.WHITE);
+	    g2.setStroke(new BasicStroke(4));
+	    g2.drawLine(WIDTH / 2, 0, WIDTH / 2, HEIGHT); // gitna ng screen
 	}
 	
 	private void drawDefaultScreenGraphics(Graphics2D g2) {
@@ -624,6 +634,33 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		
 	}
 	
+	private void drawCarSelect(Graphics2D g2) {
+		g2.setColor(Color.decode("#343837"));
+		g2.fillRect(0, 0, WIDTH, HEIGHT);
+		
+		g2.setColor(Color.decode("#3c3c3c"));
+		g2.fillRect(0, 170, WIDTH, 590);
+		g2.setColor(Color.decode("#242424"));
+		g2.fillRect(0, 380, WIDTH, 380);
+
+		drawBoldText(g2, "Garage", Color.decode("#242424"), 150, 370, 150);
+		
+		g2.setColor(Color.decode("#121213"));
+		g2.fillOval(-230, 180, 600, 600);
+		g2.fillOval(910, 180, 600, 600);
+		
+		
+		g2.setColor(Color.YELLOW);
+		g2.drawRect(362, 104, 555, 555);
+		
+		for (int i = 0; i < colorsWindowSelection.size(); i++) {
+			Rectangle currentButton = colorsWindowSelection.get(i);
+			drawColorButton(g2, currentButton, palette[i]);
+		}
+		
+		
+	}
+	
 	private void drawLevelSelect(Graphics2D g2) {
 		
 		drawDefaultScreenGraphics(g2);
@@ -635,118 +672,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		drawButton(g2, level3Button, "3", "#ffffff", "#424348", "#353535", 5, 50);
 		drawButton(g2, level4Button, "4", "#ffffff", "#424348", "#353535", 5, 50);
 		drawButton(g2, level5Button, "5", "#ffffff", "#424348", "#353535", 5, 50);
-		
-	}
 	
-	private void drawCurrentLevelText(Graphics2D g2) {
-		// TODO: screenState == LEVELZ as final value
-		if (isDay == true && isNight == false) {
-			g2.setColor(Color.decode("#624500"));
-			g2.fillRect(30, 35, 240, 85);
-			g2.setColor(Color.decode("#241a00"));
-			g2.drawRect(30, 35, 240, 85);
-		} else if (isNight == true && isDay == false) {
-			g2.setColor(Color.decode("#251a00"));
-			g2.fillRect(30, 35, 240, 85);
-			g2.setColor(Color.decode("#100a07"));
-			g2.drawRect(30, 35, 240, 85);
-		}
-		
-		switch (levelSelection) {
-		case 1:
-			drawHeadingText(g2, "Level 1", Color.WHITE, 40, 40, 80);
-			drawParagraphText(g2, "The Road Less Traveled", Color.WHITE, 21, 43, 105);
-			break;
-		case 2:
-			drawHeadingText(g2, "Level 2", Color.WHITE, 40, 40, 80);
-			drawParagraphText(g2, "Tenement Square", Color.WHITE, 21, 43, 105);
-			break;
-		case 3:
-			drawHeadingText(g2, "Level 3", Color.WHITE, 40, 40, 80);
-			drawParagraphText(g2, "Intersecting Highways", Color.WHITE, 21, 43, 105);
-			break;
-		case 4:
-			drawHeadingText(g2, "Level 4", Color.WHITE, 40, 40, 80);
-			drawParagraphText(g2, "Savannah Offroading", Color.WHITE, 21, 43, 105);
-			break;
-		case 5:
-			drawHeadingText(g2, "Level 5", Color.WHITE, 40, 40, 80);
-			drawParagraphText(g2, "Rainbow Road", Color.WHITE, 21, 43, 105);
-			break;
-		}
-	}
-	
-	// TODO: read the method name brotha
-	private void drawCurrentLevelSky() {
-		return;
-	}
-	
-	// TODO: unfinished duh
-	private void drawSky(Graphics2D g2) {
-		
-		switch (levelSelection) {
-		case 1 :
-			if (isDay) {
-				g2.setColor(Color.decode("#72c2f8"));
-				g2.fillRect(0, 0, WIDTH, HEIGHT);
-			} else if (isNight) {
-				g2.setColor(Color.BLACK);
-				g2.fillRect(0, 0, WIDTH, HEIGHT);
-			}
-			break;
-		case 2 :
-			if (isDay) {
-				g2.setColor(Color.decode("#72c2f8"));
-				g2.fillRect(0, 0, WIDTH, HEIGHT);
-			} else if (isNight) {
-				g2.setColor(Color.BLACK);
-				g2.fillRect(0, 0, WIDTH, HEIGHT);
-			}
-			break;
-		case 3 :
-			if (isDay) {
-				g2.setColor(Color.decode("#72c2f8"));
-				g2.fillRect(0, 0, WIDTH, HEIGHT);
-			} else if (isNight) {
-				g2.setColor(Color.BLACK);
-				g2.fillRect(0, 0, WIDTH, HEIGHT);
-			}
-			break;
-		case 4 :
-			if (isDay) {
-				g2.setColor(Color.decode("#99b9e2"));
-				g2.fillRect(0, 0, WIDTH, HEIGHT);
-			} else if (isNight) {
-				g2.setColor(Color.decode("#b03509"));
-				g2.fillRect(0, 0, WIDTH, HEIGHT);
-			}
-			break;
-		case 5 :
-			g2.setColor(Color.decode("#05052b"));
-			g2.fillRect(0, 0, WIDTH, HEIGHT);
-			break;
-		}
-	}
-	
-	private void drawSunOrMoon(Graphics2D g2) {
-		if (isDay) {
-			g2.setColor(Color.decode("#f8b30f"));
-			g2.fillOval(1100, 20, 150, 150);
-			g2.setColor(Color.decode("#ffbf28"));
-			g2.fillOval(1120, 40, 110, 110);
-			g2.setColor(Color.decode("#ffcd57"));
-			g2.fillOval(1150, 50, 80, 45);
-		} else if (isNight) {
-			g2.setColor(Color.decode("#ffffff"));
-			g2.fillOval(1100, 20, 150, 150);
-			g2.setColor(Color.decode("#c1c1c1"));
-			g2.fillOval(1120, 40, 110, 110);
-			g2.setColor(Color.decode("#000000"));
-			g2.fillOval(1125, 0, 150, 150);
-		}
 	}
 
-	private void drawClouds(Graphics2D g2) {
+	private void drawClouds(Graphics2D g2) { // TODO: new cloud system
 		if (isDay) {
 			g2.setColor(Color.decode("#ffffff"));
 		} else if (isNight) {
@@ -761,52 +690,20 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	}
 
 	private void drawGround(Graphics2D g2) {
-		// NOTE: DON'T DRAW THE GROUND IN LEVEL 2 & 5! HANE!
-		// TODO: unfinished colors
+		String color = "#000000";
 		switch (levelSelection) {
-		case 1 :
-			if (isDay == true) {
-				g2.setColor(Color.decode("#559d00"));
-				g2.fillRect(0, 280, WIDTH, HEIGHT - 280);
-				g2.setColor(Color.decode("#529600"));
-				g2.fillRect(0, 475, WIDTH, HEIGHT - 475);	
-			} else if (isNight == true && isDay == false) {
-				g2.setColor(Color.decode("#234100"));
-				g2.fillRect(0, 280, WIDTH, HEIGHT - 280);
-				g2.setColor(Color.decode("#1e3700"));
-				g2.fillRect(0, 475, WIDTH, HEIGHT - 475);
-			}
-			break;
-		case 3:
-			if (isDay == true) {
-				g2.setColor(Color.decode("#559d00"));
-				g2.fillRect(0, 280, WIDTH, HEIGHT - 280);
-				g2.setColor(Color.decode("#529600"));
-				g2.fillRect(0, 475, WIDTH, HEIGHT - 475);	
-			} else if (isNight == true && isDay == false) {
-				g2.setColor(Color.decode("#234100"));
-				g2.fillRect(0, 280, WIDTH, HEIGHT - 280);
-				g2.setColor(Color.decode("#1e3700"));
-				g2.fillRect(0, 475, WIDTH, HEIGHT - 475);
-			}
-			break;
-		case 4 :
-			if (isDay == true) {
-				g2.setColor(Color.decode("#ddb97e"));
-				g2.fillRect(0, 280, WIDTH, HEIGHT - 280);
-				g2.setColor(Color.decode("#bf9f6a"));
-				g2.fillRect(0, 475, WIDTH, HEIGHT - 475);	
-			} else if (isNight == true && isDay == false) {
-				g2.setColor(Color.decode("#180f0a"));
-				g2.fillRect(0, 280, WIDTH, HEIGHT - 280);
-				g2.setColor(Color.decode("#110906"));
-				g2.fillRect(0, 475, WIDTH, HEIGHT - 475);
-			}
-			break;
+			case 1 -> color = isDay ? "#559d00" : "#234100";
+		    case 2 -> color = isDay ? "#c1c1c1" : "#323232";
+		    case 3 -> color = isDay ? "#3c99c2" : "#ffffff";
+		    case 4 -> color = isDay ? "#ddb97e" : "#180f0a";
+		    case 5 -> color = "#000000";
 		}
+		
+		g2.setColor(Color.decode(color));
+		g2.fillRect(0, 0, WIDTH, HEIGHT);
 	}
 
-	private void drawAccumulatedWeather(Graphics2D g2) {
+	private void drawAccumulatedWeather(Graphics2D g2) {	// TODO
 		if (wetLevel > 0) {
 			for (Puddle p : puddles) {
 				int alpha = (int) (100 * wetLevel);
@@ -817,7 +714,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 			}
 			
 			g2.setColor(new Color(180, 210, 235, (int) (55 * wetLevel)));
-			g2.fillRect(roadX, 90, roadWidth, HEIGHT - 60);
+			g2.fillRect(rrX, 90, roadWidth, HEIGHT - 60);
 		}
 		
 		if (snowLevel > 0) {
@@ -830,59 +727,73 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		}
 	}
 
-	private void drawBridge(Graphics2D g2) {
-		g2.setColor(new Color(120, 120, 130));
-		g2.fillRect(roadX - 30, 305, roadWidth + 60, 35);
-		
-		g2.setColor(new Color(95, 95, 100));
-		for (int i = roadX - 20; i < roadX + roadWidth + 20; i += 48) {
-			g2.fillRect(i, 300, 20, 45);
-		}
-		
-		g2.setColor(new Color(70, 145, 210));
-		g2.fillRoundRect(0, 340, WIDTH, 70, 30, 30);
-		
-		g2.setColor(new Color(190, 230, 255, 110));
-		for (int i = 0; i < WIDTH; i += 90) {
-			g2.fillOval(i, 360 + (i % 4), 55, 10);
-		}
-	}
-
 	private void drawRoad(Graphics2D g2) {
-		g2.setColor(new Color(52, 53, 58));
-		g2.fillRoundRect(roadX, 90, roadWidth, HEIGHT - 40, 30, 30);
-		
-		g2.setColor(new Color(255, 255, 255, 18));
-		g2.fillRoundRect(roadX + 15, 100, roadWidth - 30, HEIGHT - 65, 25, 25);
-		
-		if (snowLevel > 0.1) {
-			g2.setColor(new Color(240, 245, 250, (int) (90 * snowLevel)));
-			g2.fillRoundRect(roadX, 90, roadWidth, HEIGHT - 40, 30, 30);
-		}
-	}
-
-	private void drawRoadMarks(Graphics2D g2) {
-		g2.setColor(Color.WHITE);
-		for (int y = 110; y < HEIGHT - 20; y += 45) {
-			g2.fillRect(roadX + laneWidth - 5, y, 10, 26);
+		String color = "#000000";
+		switch (levelSelection) {	// TODO: night colors
+			case 1 -> color = isDay ? "#424348" : "#234100";
+		    case 2 -> color = isDay ? "#323232" : "#323232";
+		    case 3 -> color = isDay ? "#919191" : "#ffffff";
+		    case 4 -> color = isDay ? "#9e9165" : "#180f0a";
+		    case 5 -> color = "#000000";	// TODO: rainbow road
 		}
 		
-		g2.setColor(new Color(220, 220, 220));
-		g2.fillRect(roadX + 12, 90, 8, HEIGHT - 40);
-		g2.fillRect(roadX + roadWidth - 20, 90, 8, HEIGHT - 40);
+		g2.setColor(Color.decode(color));
+		g2.fillRect(lrX, 0, roadWidth, HEIGHT);
+		g2.fillRect(rrX, 0, roadWidth, HEIGHT);
 	}
 
-	private void drawFinishLine(Graphics2D g2) {
+	private void drawRoadMarks(Graphics2D g2, boolean isPlayer1) {
+	    // assign variables depending sa player na nilalaro natin
+	    double camY = isPlayer1 ? p1CameraY : p2CameraY;
+	    int roadX = isPlayer1 ? lrX : rrX;
+	    
+	    String sideColor = "#FFFFFF";
+	    String dashColor = "#FFFFFF";
+	    int dashOffset = (int) (camY % 75);
+	    
+	    
+	    if (levelSelection != 5) {
+			if (levelSelection == 1) dashColor = isDay ? "#faff00" : "#234100";
+			else if (levelSelection == 4) return;
+		    
+		    // dash lines (gitna)
+		    g2.setColor(Color.decode(dashColor));
+		    for (int y = -75; y < HEIGHT; y += 75) {
+		        int drawY = y + dashOffset;
+		        int centerX = roadX + (roadWidth / 2) - 5;
+		        g2.fillRect(centerX, drawY, 10, 50);
+		    }
+	    }
+	    
+	    if (levelSelection == 5) sideColor = isDay ? "#faff00" : "#234100";
+		 
+		 // side lines
+		    g2.setColor(Color.decode(sideColor));
+		    g2.fillRect(roadX + 10, 0, 10, HEIGHT);
+		    g2.fillRect(roadX + roadWidth - 20, 0, 10, HEIGHT);
+	}
+
+	private void drawFinishLine(Graphics2D g2, boolean isPlayer1) {
+		int camY = isPlayer1 ? p1CameraY : p2CameraY;
+	    int roadX = isPlayer1 ? lrX : rrX;
 		int blockSize = 20;
 		
-		for (int i = 0; i < roadWidth / blockSize; i++) {
-			g2.setColor(i % 2 == 0 ? Color.WHITE : Color.BLACK);
-			g2.fillRect(roadX + i * blockSize, finishY, blockSize, 18);
+		switch (levelSelection) {
+		case 1 : finishY = 10000;
+		case 2 : finishY = 12000;
+		case 3 : finishY = 15000;
+		case 4 : finishY = 20000;
+		case 5 : finishY = 30000;
 		}
 		
-		g2.setColor(Color.WHITE);
-		g2.setFont(new Font("Arial", Font.BOLD, 18));
-		g2.drawString("FINISH", roadX + roadWidth / 2 - 35, finishY - 10);
+		int drawY = carFixedYPos - (finishY - camY);
+		
+		if (drawY > -50 && drawY < HEIGHT) {
+			for (int i = 0; i < roadWidth / blockSize; i++) {
+				g2.setColor(i % 2 == 0 ? Color.WHITE : Color.BLACK);
+				g2.fillRect(roadX + (i * blockSize), drawY, blockSize, 18);
+			}
+		}
 	}
 
 	private void drawHouses(Graphics2D g2) {
@@ -918,31 +829,21 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		}
 	}
 	
-	private void drawTrees(Graphics2D g2) {
-		
-		// default w/h nung trees
-		int dfltWidthA = 220;
-		int dfltHeightA = 280;
-		int dfltWidthB = 160;
-		int dfltHeightB = 280;
-		
-		// medium version & small version nung tree, add lang ito sa w/h as scale
-		double szM = 0.8;
-		double szS = 0.6;
-		
-		drawSingleTree(g2, dfltWidthA, dfltHeightA, -70, 200, this.isDay);
-		drawLayeredTree(g2, dfltWidthB, dfltHeightB, 60, 140, this.isDay);
-		drawSingleTree(g2, dfltWidthA * szM, dfltHeightA * szM, 145, 160, this.isDay);
-		drawLayeredTree(g2, dfltWidthB * szM, dfltHeightB * szM, 250, 135, this.isDay);
-		drawSingleTree(g2, dfltWidthA * szS, dfltHeightA * szS, 320, 170, this.isDay);
-		drawLayeredTree(g2, dfltWidthB * szS, dfltHeightB * szS, 420, 150, this.isDay);
-		
-		drawSingleTree(g2, dfltWidthA * szS, dfltHeightA * szS, 750, 150, this.isDay);
-		drawSingleTree(g2, dfltWidthA, dfltHeightA, 790, 60, this.isDay);
-		drawLayeredTree(g2, dfltWidthB * szM, dfltHeightB * szM, 930, 140, this.isDay);
-		drawLayeredTree(g2, dfltWidthB * szS, dfltHeightB * szS, 1030, 220, this.isDay);
-		drawSingleTree(g2, dfltWidthA * szS, dfltHeightA * szS, 1080, 250, this.isDay);
-		drawLayeredTree(g2, dfltWidthB, dfltHeightB, 1160, 190, this.isDay);
+	private void drawBackgroundElements(Graphics2D g2, boolean isPlayer1) {
+		ArrayList<BackgroundElement> targetList = isPlayer1 ? p1BGE : p2BGE;
+	    
+		// TODO: IN PROGRESS
+		switch (levelSelection) {
+		case 1 : return;
+	    case 2 : return;
+	    case 3 : return;
+	    case 4 :
+	    	for (BackgroundElement bge : targetList) {
+		        drawSavannahTree(g2, (int) bge.x, (int) bge.y, 0.15);
+		    }
+		    break;
+	    case 5 : return;
+		}
 	}
 	
 	private void drawTree(Graphics2D g2, int x, int y) {
@@ -991,69 +892,22 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		}
 	}
 	
-	private void drawCars(Graphics2D g2) {
-		drawCar(g2, player1);
-		drawCar(g2, player2);
-	}
 	
 	private void drawCar(Graphics2D g2, Car car) {
-		int x = (int) car.x;
-		int y = (int) car.y;
-		
-		// rotational logic
-	    AffineTransform oldTransform = g2.getTransform();
-	    g2.rotate(Math.toRadians(car.angle + 90), x + (car.width / 2.0), y + (car.height / 2.0));
+		AffineTransform oldTransform = g2.getTransform();
+
+	    // 2. Move the "pen" to the car's position
+	    g2.translate(car.x, car.y);
+
+	    double scaledWidth = 304 * 0.2;  // Your car width * scale
+	    double scaledHeight = 743 * 0.2; // Your car height * scale
 	    
-	    // START DRAWING THE CAR
-		// outer body color
-		g2.setColor(Color.decode("#b35fdb"));
-		g2.fillRoundRect(x, y, car.width, car.height, 42,42);
-		
-		// rear view mirrors
-		g2.setColor(Color.decode("#a548d5"));
-		g2.fillOval(x - 10, y + car.height - 115, 18, 6);	//left
-		g2.fillOval(x + car.width - 10, y + car.height - 115, 18, 6); //right
-				
-		// inner body color
-		g2.setColor(Color.decode("#a548d5"));
-		g2.fillRoundRect(x + 6, y, car.width - 11, car.height, 42, 42);
-		
-		// windows
-		g2.setStroke(new BasicStroke(2));
-		g2.setColor(Color.DARK_GRAY);
-		g2.fillRoundRect(x + 5, y + 30, 54, 33, 30, 30); // front
-		g2.setColor(Color.BLACK);
-		g2.drawRoundRect(x + 5, y + 30, 54, 33, 30, 30);
-		g2.setColor(Color.DARK_GRAY);
-		g2.fillRoundRect(x + 5, y + 100, 54, 18, 20, 20); // back
-		g2.setColor(Color.BLACK);
-		g2.drawRoundRect(x + 5, y + 100, 54, 18, 20, 20);
-		
-		// front lights
-		g2.setStroke(new BasicStroke(2));
-		g2.setColor(Color.WHITE);
-		g2.fillOval(x, y, 18, 5);	//front-left
-		g2.setColor(Color.YELLOW);
-		g2.drawOval(x, y, 18, 5);
-		g2.setColor(Color.WHITE);
-		g2.fillOval(x + car.width - 20, y, 18, 5); //front-right
-		g2.setColor(Color.YELLOW);
-		g2.drawOval(x + car.width - 20, y, 18, 5);
-		
-		// back lights
-		g2.setColor(Color.RED);
-		g2.fillOval(x, y + car.height - 6, 18, 6);	//bot-left
-		g2.fillOval(x + car.width - 20, y + car.height - 6, 18, 6); //bot-right
-		
-		// text label
-		g2.setColor(Color.GRAY);
-		g2.setFont(new Font("Century Gothic", Font.BOLD, 16));
-		g2.drawString(car.label, x + 22, y + car.height / 2 + 8);
-		
-		// ENDS OR RESTORES THE DRAW STATE PARA DI MA-ROTATE YUNG FOLLOWING CHANGES SA G2
-		// kumbaga naka sandwich sa rotate method at setTransform method yung car graphics
-		// at iyun lang maaapektuhan ng rotation
-		g2.setTransform(oldTransform);
+	    g2.rotate(Math.toRadians(car.angle + 90), scaledWidth / 2, scaledHeight / 2);
+
+	    drawCarMcQueen(g2, 0, 0, 0.2);
+
+	    // 5. Restore the canvas so other things (like the UI) don't draw tilted
+	    g2.setTransform(oldTransform);
 	}
 	
 	private void drawWeatherEffects(Graphics2D g2) {
@@ -1072,6 +926,16 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		}
 	}
 
+	// TODO: fix appearance
+	private void drawStars(Graphics2D g2) {
+		if (isNight) {
+			g2.setColor(Color.WHITE);
+			for (RainDrop d : rainDrops) {
+				g2.drawLine(d.x, d.y, d.x - 3, d.y + 12);
+			}
+		}
+	}
+	
 	private void drawHUDSection(Graphics2D g2) {
 		
 		drawButton(g2, dayModeButton, "LEVELS", "#72c2f8", "#ffffff", "#ffffff", 5, 0);
@@ -1110,11 +974,54 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	private void drawColorsWindow(Graphics2D g2) {
 		if (showColorsWindow == true) {
 			drawWindow(g2, colorsWindow, "#919191", "#ffffff", 5);
-			
-			for (int i = 0; i < colorsWindowSelection.size(); i++) {
-				Rectangle currentButton = colorsWindowSelection.get(i);
-				drawButton(g2, currentButton, " ", hexCarColorPalette[i], "#FFFFFF", hexCarColorPalette[i], 5, 1);
-			}
+		}
+	}
+	
+	private void drawBuildingA(Graphics2D g2, int xOffset, int yOffset, double size) {
+		//BUILDING1<<
+		//wholeBuilding
+		g2.setColor(Color.decode("#835851"));
+		g2.fillRect(28, 0, 380, 760);
+		
+		//top
+		g2.setColor(Color.decode("#372219"));
+		g2.fillRect(30, 0, 411, 43);
+		
+		//bottom
+		g2.setColor(Color.decode("#353535"));
+		g2.fillRect(0, 681, 408, 79);
+		
+		//door
+		g2.setColor(Color.decode("#121213"));
+		g2.fillRect(163, 620, 110, 140);
+		
+		//windowBg
+		g2.setColor(Color.decode("#3a6582"));
+		
+		int startX = 72;
+		int startY = 96;
+		int width = 63;
+		int height = 120;
+		int spacing = 115;
+
+		for (int row = 0; row < 3; row++) {
+		    for (int col = 0; col < 3; col++) {
+		        int currentX = startX + (col * spacing);
+		        int currentY = startY + (row * spacing);
+		        g2.fillRect(currentX + xOffset, currentY , width, height);
+		    }
+		}
+		
+		//windowOutline
+		g2.setColor(Color.WHITE);
+		g2.setStroke(new BasicStroke(5));
+		
+		for (int row = 0; row < 3; row++) {
+		    for (int col = 0; col < 3; col++) {
+		        int currentX = startX + (col * spacing);
+		        int currentY = startY + (row * spacing);
+		        g2.drawRect(currentX, currentY, width, height);
+		    }
 		}
 	}
 
@@ -1284,15 +1191,19 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	public void keyPressed(KeyEvent e) {
 		int key = e.getKeyCode();
 		
+		// REMOVE: ts just for testing
+		if (key == KeyEvent.VK_ESCAPE) screenState = ScreenState.LEVELSELECT;
+		
 		if (key == KeyEvent.VK_W) p1Up = true;
 		if (key == KeyEvent.VK_S) p1Down = true;
 		if (key == KeyEvent.VK_A) p1Left = true;
 		if (key == KeyEvent.VK_D) p1Right = true;
 		
-		if (key == KeyEvent.VK_UP) p2Up = true;
-		if (key == KeyEvent.VK_DOWN) p2Down = true;
-		if (key == KeyEvent.VK_LEFT) p2Left = true;
-		if (key == KeyEvent.VK_RIGHT) p2Right = true;
+		
+		if (key == KeyEvent.VK_I) p2Up = true;
+		if (key == KeyEvent.VK_K) p2Down = true;
+		if (key == KeyEvent.VK_J) p2Left = true;
+		if (key == KeyEvent.VK_L) p2Right = true;
 	}
 	
 	@Override
@@ -1300,12 +1211,14 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		int key = e.getKeyCode();
 		
 		if (key == KeyEvent.VK_W) p1Up = false;
+		if (key == KeyEvent.VK_S) p1Down = false;
 		if (key == KeyEvent.VK_A) p1Left = false;
 		if (key == KeyEvent.VK_D) p1Right = false;
 		
-		if (key == KeyEvent.VK_UP) p2Up = false;
-		if (key == KeyEvent.VK_LEFT) p2Left = false;
-		if (key == KeyEvent.VK_RIGHT) p2Right = false;
+		if (key == KeyEvent.VK_I) p2Up = false;
+		if (key == KeyEvent.VK_K) p2Down = false;
+		if (key == KeyEvent.VK_J) p2Left = false;
+		if (key == KeyEvent.VK_L) p2Right = false;
 	}
 	
 	@Override
