@@ -1,17 +1,12 @@
 package group10.helpers;
 
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.font.TextAttribute;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Path2D;
-import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -122,7 +117,7 @@ public class GUIHelpers {
 		g2.drawRect(r.x + (strokeWeight / 2), r.y + (strokeWeight / 2), r.width - strokeWeight, r.height - strokeWeight);
 	}
 	
-	public static void drawMenuButton(Graphics2D g2, Rectangle r, String text, String hexColor) {
+	public static void drawPrimaryButton(Graphics2D g2, Rectangle r, String text, int fontSize, String hexColor) {
 		// drop shadow
 		g2.setColor(new Color(0, 0, 0, 40));
 		g2.fillRoundRect(r.x + 5, r.y + 5, r.width, r.height, 40, 40);
@@ -138,11 +133,13 @@ public class GUIHelpers {
 		
 		// font & text
 		g2.setColor(Color.decode("#353535"));
-		g2.setFont(new Font("Century Gothic", Font.PLAIN, 40));
+		g2.setFont(new Font("Century Gothic", Font.PLAIN, fontSize));
 		adjustKerning(g2, -0.1);
 		FontMetrics fm = g2.getFontMetrics();
 		int tx = r.x + (r.width - fm.stringWidth(text)) / 2;
 	    int ty = r.y + (r.height - fm.getHeight()) / 2 + fm.getAscent();
 		g2.drawString(text, tx, ty);
 	}
+	
+	
 }

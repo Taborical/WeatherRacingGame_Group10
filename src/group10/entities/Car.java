@@ -10,14 +10,17 @@ public class Car {
 	public double angle = -90.0;
 	public Color color;
 	public String label;
+	public boolean isPlayer1;
 	private double metersTraveled = 0;
 	private boolean isInTrouble = false;
+	// TODO: baka tanggalin nalang, katamad maglagay ng police logic
 	
-	public Car(double x, double y, Color color, String label) {
+	public Car(double x, double y, Color color, String label, boolean isPlayer1) {
 		this.x = x;
 		this.y = y;
 		this.color = color;
 		this.label = label;
+		this.isPlayer1 = isPlayer1;
 	}
 	
 	public void setInTrouble(boolean status) {

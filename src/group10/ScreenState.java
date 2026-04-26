@@ -8,8 +8,7 @@ public enum ScreenState {
 	LEVEL2,
 	LEVEL3,
 	LEVEL4,
-	LEVEL5,
 	GAME,
 	PAUSED,
-	SUMMARY
+	SUMMARY,
 }

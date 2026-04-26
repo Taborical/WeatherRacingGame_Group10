@@ -6,23 +6,48 @@ import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.geom.AffineTransform;
 
+import group10.helpers.GameSettings;
+
 public class CarModels {
 	
+	// method for darkening hex value colors
+	public static String darken(String hex) {
+	    Color c = Color.decode(hex).darker();
+	    // since hex value are hex, its literally rgb pero pa-hexadecimal yung value
+	    // 00 is the same as 0 sa rgb value, FF is 255 sa rgb value, every two characters
+	    // corresponds to R,G,B, so #FFFFFF is 255, 255, 255. gets? gets!!!!!!!!
+	    
+	    // dito nai-return yung newly formatted rgb values into stringed hex value ulet
+	    // kasi makulet hehehehehe
+	    return String.format("#%02X%02X%02X", c.getRed(), c.getGreen(), c.getBlue());
+	}
+	
 	// MCQUEEN
-	public static void drawCarMcQueen(Graphics2D g2, int x, int y, double scale) {
+	public static void drawCarMcQueen(Graphics2D g2, int x, int y, double scale, boolean isPlayer1) {
+		
+		String mainColor = GameSettings.selectedCarColorP1;
+		String shadedColor = darken(GameSettings.selectedCarColorP1);
+		
+		if (isPlayer1) {
+			mainColor = GameSettings.selectedCarColorP1;
+			shadedColor = darken(GameSettings.selectedCarColorP1);
+		} else {
+			mainColor = GameSettings.selectedCarColorP2;
+			shadedColor = darken(GameSettings.selectedCarColorP2);
+		}
 		
 		AffineTransform at = g2.getTransform();
 		g2.translate(x, y);
 	    g2.scale(scale, scale);
 	    
-		g2.setColor(Color.decode("#9d2828"));
+		g2.setColor(Color.decode(mainColor));
 		g2.fillOval(0, 403, 86, 357);
 		g2.fillOval(267, 403, 86, 357);
 		
 		//BODY
-		g2.setColor(Color.decode("#9d2828"));
+		g2.setColor(Color.decode(shadedColor));
 		g2.fillRoundRect(26, 0, 304, 743,100,100);
-		g2.setColor(Color.decode("#ff0000"));
+		g2.setColor(Color.decode(mainColor));
 		g2.fillRoundRect(45, 0, 265, 743, 75, 75);
 				
 		//rearSpoiler
@@ -33,7 +58,7 @@ public class CarModels {
 		spoiler.addPoint(32 + 291, 719 + 41);
 		spoiler.addPoint(32, 719 + 41);
 		
-		g2.setColor(Color.decode("#ff0000"));
+		g2.setColor(Color.decode(mainColor));
 		g2.fillPolygon(spoiler);
 		
 		
@@ -43,9 +68,9 @@ public class CarModels {
 		g2.fillRoundRect(253, 261, 50, 204,68,68);
 		
 		//top
-		g2.setColor(Color.decode("#d42423"));
+		g2.setColor(Color.decode(mainColor));
 		g2.fillRoundRect(65, 182, 226, 479,45,45);
-		g2.setColor(Color.decode("#8f2b36"));
+		g2.setColor(Color.decode(shadedColor));
 		g2.setStroke(new BasicStroke(5));
 		g2.drawRoundRect(65, 182, 226, 479,45,45);
 		
@@ -57,7 +82,7 @@ public class CarModels {
 		g2.fillRoundRect(241, 479, 50, 180,10,10);
 		
 		//front
-		g2.setColor(Color.decode("#8f2b36"));
+		g2.setColor(Color.decode(shadedColor));
 		g2.fillOval(103, 27, 155, 155);
 		
 		//frontWindow

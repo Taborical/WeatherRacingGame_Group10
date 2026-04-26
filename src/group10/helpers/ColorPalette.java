@@ -2,7 +2,7 @@ package group10.helpers;
 
 public enum ColorPalette {
 
-    // Row 1
+    // row 1
     PINK("#ED9DB2"),
     CRIMSON_RED("#DA1140"),
     BURGUNDY("#922244"),
@@ -11,7 +11,7 @@ public enum ColorPalette {
     DARK_RED("#A81B34"),
     LIGHT_ORANGE("#FFAD64"),
 
-    // Row 2
+    // row 2
     ORANGE("#FC6B04"),
     RUST_BROWN("#983F23"),
     PALE_YELLOW("#EBE86C"),
@@ -20,7 +20,7 @@ public enum ColorPalette {
     LIGHT_GREEN("#BFE082"),
     YELLOW_GREEN("#A8D116"),
 
-    // Row 3
+    // row 3
     OLIVE("#99A109"),
     MINT_GREEN("#9BE4CA"),
     BRIGHT_GREEN("#1BBE1B"),
@@ -29,7 +29,7 @@ public enum ColorPalette {
     TURQUOISE("#00C6CA"),
     TEAL("#299F7A"),
 
-    // Row 4
+    // row 4
     LIGHT_BLUE_GRAY("#A2C8D6"),
     BRIGHT_CYAN("#00B8E8"),
     DARK_CYAN("#008785"),
@@ -38,7 +38,7 @@ public enum ColorPalette {
     COBALT_BLUE("#005696"),
     PERIWINKLE("#6D72D6"),
 
-    // Row 5
+    // row 5
     ULTRAMARINE("#1405AD"),
     NAVY_BLUE("#003180"),
     PURPLE("#8344AC"),
@@ -47,7 +47,7 @@ public enum ColorPalette {
     HOT_PINK("#F76E9B"),
     MAGENTA("#D10078"),
 
-    // Row 6
+    // row 6
     DARK_PURPLE("#6B296A"),
     PALE_PEACH("#F3CDAC"),
     TAN("#E09D69"),
@@ -56,7 +56,7 @@ public enum ColorPalette {
     SIENNA("#694319"),
     DARK_BROWN("#42322A"),
 
-    // Row 7 (Grayscale Bottom Row)
+    // row 7 (grayscale for da emos)
     WHITE("#FFFFFF"),
     LIGHT_GRAY("#A7ABAD"),
     MEDIUM_GRAY("#888C8F"),
@@ -68,10 +68,12 @@ public enum ColorPalette {
 
     private final String hexCode;
 
+    // setter
     ColorPalette(String hexCode) {
         this.hexCode = hexCode;
     }
 
+    // getter
     public String getHexCode() {
         return hexCode;
     }
