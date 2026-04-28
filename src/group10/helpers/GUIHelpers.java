@@ -141,5 +141,4 @@ public class GUIHelpers {
 		g2.drawString(text, tx, ty);
 	}
 	
-	
 }

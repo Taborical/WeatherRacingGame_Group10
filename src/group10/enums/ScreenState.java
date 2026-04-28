@@ -1,4 +1,4 @@
-package group10;
+package group10.enums;
 
 public enum ScreenState {
 	MENU,

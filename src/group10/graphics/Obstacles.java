@@ -111,12 +111,25 @@ public class Obstacles {
 		g2.fillRoundRect(105, 18, 45, 340, 35, 35);
 
 		// BEAK
+		AffineTransform beforeBeak = g2.getTransform();
+
+		// Pivot point = where beak attaches to head
+		int pivotX = 23;
+		int pivotY = 33;
+
+		// Rotate around that point
+		g2.rotate(Math.toRadians(0), pivotX, pivotY);
+
+		// Beak shape relative to pivot
+		Polygon tri = new Polygon();
+		tri.addPoint(pivotX, pivotY);            // tip
+		tri.addPoint(pivotX + 60, pivotY + 20);  // bottom
+		tri.addPoint(pivotX + 40, pivotY - 20);  // top
+
 		g2.setColor(Color.decode("#8c6812"));
-		Polygon beak = new Polygon();
-		beak.addPoint(40, 28);   // tip
-		beak.addPoint(62, 20);   // top of base, against head
-		beak.addPoint(62, 36);   // bottom of base, against head
-		g2.fillPolygon(beak);
+		g2.fillPolygon(tri);
+
+		g2.setTransform(beforeBeak);
 
 		// HEAD
 		g2.setColor(Color.decode("#bb9d96"));
