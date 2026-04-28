@@ -90,6 +90,36 @@ public class GUIHelpers {
 		g2.drawString(text, tx, ty);
 	}
 	
+	public static void drawControlsText(Graphics2D g2, String text, int x, int y) {
+		g2.setFont(new Font("Century Gothic", Font.PLAIN, 25)); 
+		adjustKerning(g2, -0.05);
+			
+		g2.setColor(new Color(0, 0, 0, 50));	// drop shadow color
+		g2.drawString(text, x + (25 / 12), y + (25 / 12));	// drop
+			
+		g2.setColor(Color.WHITE);
+		g2.drawString(text, x, y);	// main
+	}
+	
+	public static void drawControlButton(Graphics2D g2, String text, int x, int y) {
+		// main button
+		g2.setColor(Color.WHITE);
+		g2.fillRect(x, y, 60, 60);
+		
+		// button stroke
+		g2.setStroke(new BasicStroke(3));
+		g2.setColor(Color.decode("#424348"));
+		g2.drawRect(x, y, 60, 60);
+		
+		// font & text
+		g2.setFont(new Font("Century Gothic", Font.PLAIN, 25));
+		adjustKerning(g2, -0.1);
+		FontMetrics fm = g2.getFontMetrics();
+		int tx = x + (60 - fm.stringWidth(text)) / 2;
+	    int ty = y + (60 - fm.getHeight()) / 2 + fm.getAscent();
+		g2.drawString(text, tx, ty);
+	}
+	
 	public static void drawColorButton(Graphics2D g2, Rectangle r, ColorPalette palette) {
 		
 		// drop shadow TODO: fix drop shadow scaling with size

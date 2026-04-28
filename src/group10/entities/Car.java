@@ -11,9 +11,8 @@ public class Car {
 	public Color color;
 	public String label;
 	public boolean isPlayer1;
-	private double metersTraveled = 0;
-	private boolean isInTrouble = false;
-	// TODO: baka tanggalin nalang, katamad maglagay ng police logic
+	public double metersTraveled = 0;
+	public double revCharge = 0;
 	
 	public Car(double x, double y, Color color, String label, boolean isPlayer1) {
 		this.x = x;
@@ -22,10 +21,6 @@ public class Car {
 		this.label = label;
 		this.isPlayer1 = isPlayer1;
 	}
-	
-	public void setInTrouble(boolean status) {
-        this.isInTrouble = status;
-    }
 
     public double getMetersTraveled() {
         return metersTraveled;

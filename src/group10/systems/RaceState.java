@@ -78,15 +78,12 @@ public class RaceState {
 		roundsPlayed = 0;
 	}
 
-	/**
-	 * Sets {@link #finishY} based on the currently selected level.
-	 */
 	public void updateFinishY(int levelSelection) {
 		switch (levelSelection) {
-		case 1 -> finishY = 15000;
-		case 2 -> finishY = 20000;
-		case 3 -> finishY = 25000;
-		case 4 -> finishY = 30000;
+		case 1 -> finishY = 20000;
+		case 2 -> finishY = 40000;
+		case 3 -> finishY = 60000;
+		case 4 -> finishY = 80000;
 		}
 	}
 

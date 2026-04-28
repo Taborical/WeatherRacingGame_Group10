@@ -7,10 +7,12 @@ import java.awt.geom.AffineTransform;
 
 public class Obstacles {
 	
-	public static void drawBollard(Graphics2D g2, int x, int y, double scale) {
+	public static void drawBollard(Graphics2D g2, 
+			int x, int y, double scale) {
 		AffineTransform at = g2.getTransform();
 	    g2.translate(x, y);
 	    g2.scale(scale, scale);
+	    
 		//base
 		g2.setColor(Color.decode("#9d2828"));
 		g2.fillRoundRect(0, 0, 207, 760, 210, 210);
@@ -19,18 +21,6 @@ public class Obstacles {
 		g2.setColor(Color.WHITE);
 		g2.fillRect(0, 85, 207, 72);
 		g2.fillRect(0, 202, 207, 72);
-		
-		g2.setTransform(at);
-	}
-	
-	public static void drawPuddle(Graphics2D g2, int x, int y, double scale) {
-		AffineTransform at = g2.getTransform();
-	    g2.translate(x, y);
-	    g2.scale(scale, scale);
-	    
-		g2.setColor(Color.decode("#004aad"));
-		g2.fillOval(232, 0, 1048, 274);
-		g2.fillOval(0, 147, 594, 152);
 		
 		g2.setTransform(at);
 	}
@@ -45,7 +35,50 @@ public class Obstacles {
 	    g2.setColor(new Color(0, 0, 0, 100));
 	    g2.fillOval(0, 605, 365, 154);
 
-        //DITO ARMS
+	    //DITO ARMS
+	    // LEFT ARM
+	    AffineTransform beforeLeftArm = g2.getTransform();
+
+	    int leftArmX = 25;
+	    int leftArmY = 376;
+	    int armW = 32;
+	    int armH = 133;
+
+	    int leftPivotX = 23;
+	    int leftPivotY = 33;
+
+	    int leftCenterX = leftArmX + armW / 2;
+	    int leftCenterY = leftArmY + armH / 2;
+
+	    g2.rotate(Math.toRadians(45), leftCenterX + leftPivotX, leftCenterY + leftPivotY);
+	    g2.setColor(Color.decode("#000000"));
+	    g2.fillRect(leftArmX, leftArmY, armW, armH);
+
+	    g2.setTransform(beforeLeftArm);
+	    
+	    AffineTransform beforeRightArm = g2.getTransform();
+
+	    int rightArmX = 200;
+	    int rightArmY = 376;
+
+	    int rightPivotX = -23;
+	    int rightPivotY = 33;
+
+	    int rightCenterX = rightArmX + armW / 2;
+	    int rightCenterY = rightArmY + armH / 2;
+
+	    g2.rotate(Math.toRadians(-45), rightCenterX + rightPivotX, rightCenterY + rightPivotY);
+	    g2.fillRect(rightArmX, rightArmY, armW, armH);
+
+	    g2.setTransform(beforeRightArm);
+
+	    g2.rotate(Math.toRadians(-45), 306 + 32 / 2.0, 376 + 133 / 2.0);
+	    g2.setColor(Color.decode("#000000"));
+	    g2.fillRect(306, 376, 32, 133);
+
+	    g2.setTransform(beforeRightArm); // undo rotation
+
+		
 
 	    //BODY
 	    g2.setColor(Color.decode("#000000"));

@@ -89,62 +89,6 @@ public class BackgroundElements {
 		g2.setTransform(at);
 	}
 	
-	public static void drawCabin(Graphics2D g2, int x, int y, double scale) {
-		
-		AffineTransform at = g2.getTransform();
-		g2.translate(x, y);
-		g2.scale(scale, scale);
-		
-		//triangle outer
-		Polygon tri = new Polygon();
-		tri.addPoint(0 + 616/2, 180);
-		tri.addPoint(0 + 616, 180 + 499);
-		tri.addPoint(0, 180 + 499);
-
-		g2.setColor(Color.decode("#624500"));
-		g2.fillPolygon(tri);
-
-		//triangle inner
-		Polygon tria = new Polygon();
-		tria.addPoint(67 + 493/2, 238);
-		tria.addPoint(67 + 493, 238 + 394);
-		tria.addPoint(67, 238 + 394);
-
-		g2.setColor(Color.decode("#ffde59"));
-		g2.fillPolygon(tria);
-
-
-		//door
-		g2.setColor(Color.decode("#9d6f00"));
-		g2.fillRect(267, 435, 81, 155);
-
-		//floor
-		g2.setColor(Color.decode("#372219"));
-		g2.fillRect(38, 617, 1064, 72);
-
-		//foundation
-		int f[] = {37, 293, 548, 810, 1073};
-		for (int i = 0; i < f.length; i++) {
-			g2.fillRect(f[i], 688, 30, 72);
-		}
-
-		//roof
-		Polygon roof = new Polygon();
-
-		roof.addPoint(286, 180);
-		roof.addPoint(610, 180);
-		roof.addPoint(286 + 915, 180 + 499);
-		roof.addPoint(286 + 286, 180 + 499);
-
-		g2.setColor(Color.decode("#624500"));
-		g2.fillPolygon(roof);
-
-		g2.setColor(Color.decode("#424348"));
-		g2.fillRoundRect(519, 0, 57, 359, 51, 51);
-
-		g2.setTransform(at);
-	}
-	
 	// LEVEL 2
 	public static void drawHotel(Graphics2D g2, int x, int y, double scale) {
 		
@@ -174,14 +118,15 @@ public class BackgroundElements {
 		int startY = 96;
 		int width = 63;
 		int height = 120;
-		int spacing = 115;
+		int hSpacing = 115;
+		int vSpacing = 140; // Larger than height (120)
 
 		for (int row = 0; row < 3; row++) {
-			for (int col = 0; col < 3; col++) {
-				int currentX = startX + (col * spacing);
-				int currentY = startY + (row * spacing);
-				g2.fillRect(currentX, currentY, width, height);
-			}
+		    for (int col = 0; col < 3; col++) {
+		        int currentX = startX + (col * hSpacing);
+		        int currentY = startY + (row * vSpacing); // Use vertical spacing here
+		        g2.fillRect(currentX, currentY, width, height);
+		    }
 		}
 
 		//windowOutline
@@ -190,8 +135,8 @@ public class BackgroundElements {
 
 		for (int row = 0; row < 3; row++) {
 			for (int col = 0; col < 3; col++) {
-				int currentX = startX + (col * spacing);
-				int currentY = startY + (row * spacing);
+				int currentX = startX + (col * hSpacing);
+				int currentY = startY + (row * vSpacing);
 				g2.drawRect(currentX, currentY, width, height);
 			}
 		}

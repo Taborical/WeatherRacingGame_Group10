@@ -30,7 +30,7 @@ public class WeatherSystem {
 	public double wetLevel = 0;
 	public double snowLevel = 0;
 	public double windLevel = 0;
-	public static final double WIND_PUSH_PER_FRAME = 10;
+	public static final double WIND_PUSH_PER_FRAME = 8;
 
 	// PARTICLES
 	public final List<RainDrop> rainDrops = new ArrayList<>();

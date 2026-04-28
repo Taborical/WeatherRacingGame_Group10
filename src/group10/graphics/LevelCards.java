@@ -72,7 +72,7 @@
 				drawParagraphText(g2, "It may not be the most ideal spot", Color.WHITE, 35, 220, 300);
 				drawParagraphText(g2, "to race on, but you only live once!", Color.WHITE, 35, 220, 340);
 				drawParagraphText(g2, "There may be endangered and", Color.WHITE, 35, 220, 380);
-				drawParagraphText(g2, "dangerous animals on and off the road,", Color.WHITE, 35, 220, 420);
+				drawParagraphText(g2, "dangerous animals on and off the road;", Color.WHITE, 35, 220, 420);
 				drawParagraphText(g2, "the savannah isn't exactly forgiving.", Color.WHITE, 35, 220, 460);
 			}
 		}

@@ -2,8 +2,11 @@ package group10.systems;
 
 import group10.entities.Car;
 import group10.entities.Obstacle;
+import group10.enums.AudioFiles;
 import group10.graphics.Obstacles;
 import group10.helpers.GameSettings;
+import group10.enums.AudioFiles;
+import group10.systems.SoundPlayer;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -30,6 +33,8 @@ public class ObstacleManager {
 	private static final int STUN_FRAMES = 60;
 	private int    p1StunTicks = 0,  p2StunTicks = 0;
 	private double p1PreStunAngle = 0, p2PreStunAngle = 0;
+	
+	private SoundPlayer aux = new SoundPlayer();
 
 	public ObstacleManager(int height, int lrX, int rrX, int roadWidth, int carFixedYPos) {
 		this.HEIGHT = height;
@@ -157,6 +162,7 @@ public class ObstacleManager {
 			int screenY = carFixedYPos - (int)(o.worldY - camY);
 			Rectangle oBox = new Rectangle((int) o.screenX, screenY, o.hitW, o.hitH);
 			if (carBox.intersects(oBox)) {
+				aux.play(AudioFiles.HIT);
 				if (isP1) {
 					p1PreStunAngle = car.angle;
 					p1StunTicks    = STUN_FRAMES;
