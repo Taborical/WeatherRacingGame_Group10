@@ -31,7 +31,7 @@ public class ObstacleManager {
 	// STUN STATE
 	// 60 ticks * 6 deg/tick = exactly one 360 spin per second
 	private static final int STUN_FRAMES = 60;
-	private int    p1StunTicks = 0,  p2StunTicks = 0;
+	private int p1StunTicks = 0, p2StunTicks = 0;
 	private double p1PreStunAngle = 0, p2PreStunAngle = 0;
 	
 	private SoundPlayer aux = new SoundPlayer();
@@ -58,9 +58,11 @@ public class ObstacleManager {
 
 	public void update(boolean isRunning, boolean countdownActive,
 			int p1CameraY, int p2CameraY, Car player1, Car player2) {
+		
 		if (!isRunning || countdownActive) return;
 		int level = GameSettings.levelSelection;
 		if (level != 2 && level != 3 && level != 4) return;
+		
 		updateObstaclesFor(true,  p1CameraY);
 		updateObstaclesFor(false, p2CameraY);
 
@@ -109,7 +111,7 @@ public class ObstacleManager {
 		}
 
 		if (isP1) p1NextSpawnY = nextY;
-		else      p2NextSpawnY = nextY;
+		else p2NextSpawnY = nextY;
 	}
 
 	private void spawnObstacleAhead(boolean isP1, int camY) {
@@ -117,6 +119,7 @@ public class ObstacleManager {
 		int roadX = isP1 ? lrX : rrX;
 		ArrayList<Obstacle> list = isP1 ? p1Obstacles : p2Obstacles;
 		double worldY = camY + 600 + random.nextInt(1800);   // 600–2400 px ahead
+		
 		if (level == 2) {
 			// man spawn
 			int hitW = 55, hitH = 115;
@@ -124,6 +127,7 @@ public class ObstacleManager {
 			int x = roadX + 20 + random.nextInt(roadWidth - hitW - 40);
 			double vx = (random.nextBoolean() ? 1 : -1) * (0.4 + random.nextDouble() * 0.7);
 			list.add(new Obstacle(0, worldY, x, vx, scale, hitW, hitH));
+			
 		} else if (level == 3) {
 			// 5-bollard wall
 			int startX = roadX + 5 + (random.nextBoolean() ? 0 : roadWidth / 2);
@@ -141,14 +145,15 @@ public class ObstacleManager {
 	}
 
 	private double nextSpawnDistance(int level) {
-		if (level == 2) return 600 + random.nextInt(900);    // man:    every  600–1500 world px
-		if (level == 3) return 900 + random.nextInt(1200);   // bollard wall: every 900–2100 world px
-		if (level == 4) return 700 + random.nextInt(1100);   // ostrich: every  700–1800 world px
+		if (level == 2) return 600 + random.nextInt(900);    // man: every 600–1500 world px
+		if (level == 3) return 900 + random.nextInt(1200);   // bollard walls: every 900–2100 world px
+		if (level == 4) return 700 + random.nextInt(1100);   // ostrich: every 700–1800 world px
 		return Double.MAX_VALUE;
 	}
 
 	public void checkCollisions(Car player1, Car player2, int p1CameraY, int p2CameraY) {
 		int level = GameSettings.levelSelection;
+		
 		if (level != 2 && level != 3 && level != 4) return;
 		if (p1StunTicks <= 0) hitTest(player1, p1Obstacles, p1CameraY, true);
 		if (p2StunTicks <= 0) hitTest(player2, p2Obstacles, p2CameraY, false);
@@ -157,10 +162,12 @@ public class ObstacleManager {
 	private void hitTest(Car car, ArrayList<Obstacle> list, int camY, boolean isP1) {
 		Rectangle carBox = new Rectangle((int) car.x, (int) car.y, 50, 90);
 		Iterator<Obstacle> it = list.iterator();
+		
 		while (it.hasNext()) {
 			Obstacle o = it.next();
 			int screenY = carFixedYPos - (int)(o.worldY - camY);
 			Rectangle oBox = new Rectangle((int) o.screenX, screenY, o.hitW, o.hitH);
+			
 			if (carBox.intersects(oBox)) {
 				aux.play(AudioFiles.HIT);
 				if (isP1) {
@@ -170,6 +177,7 @@ public class ObstacleManager {
 					p2PreStunAngle = car.angle;
 					p2StunTicks    = STUN_FRAMES;
 				}
+				
 				car.speed = 0;
 				it.remove();
 				break;
@@ -179,11 +187,16 @@ public class ObstacleManager {
 
 	public void draw(Graphics2D g2, boolean isP1, int cameraY) {
 		int level = GameSettings.levelSelection;
+		
 		if (level != 2 && level != 3 && level != 4) return;
+		
 		ArrayList<Obstacle> list = isP1 ? p1Obstacles : p2Obstacles;
+		
 		for (Obstacle o : list) {
 			int screenY = carFixedYPos - (int)(o.worldY - cameraY);
+			
 			if (screenY < -300 || screenY > HEIGHT + 200) continue;
+			
 			if (o.kind == 0) {
 				Obstacles.drawMan(g2, (int) o.screenX, screenY, o.scale);
 			} else if (o.kind == 1) {

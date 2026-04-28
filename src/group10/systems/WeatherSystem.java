@@ -1,7 +1,6 @@
 package group10.systems;
 
 import group10.entities.Cloud;
-import group10.entities.Puddle;
 import group10.entities.RainDrop;
 import group10.entities.SnowFlake;
 import group10.entities.WindParticle;
@@ -36,7 +35,6 @@ public class WeatherSystem {
 	public final List<RainDrop> rainDrops = new ArrayList<>();
 	public final List<SnowFlake> snowFlakes = new ArrayList<>();
 	public final List<Cloud> clouds = new ArrayList<>();
-	public final List<Puddle> puddles = new ArrayList<>();
 	public final List<WindParticle> windParticles = new ArrayList<>();
 
 	// RANDOM WEATHER SCHEDULER
@@ -57,9 +55,11 @@ public class WeatherSystem {
 		for (int i = 0; i < 180; i++) {
 			rainDrops.add(new RainDrop(random.nextInt(WIDTH), random.nextInt(HEIGHT), 6 + random.nextInt(8)));
 		}
+		
 		for (int i = 0; i < 150; i++) {
 			snowFlakes.add(new SnowFlake(random.nextInt(WIDTH), random.nextInt(HEIGHT), 2 + random.nextInt(4)));
 		}
+		
 		for (int i = 0; i < 5; i++) {
 			clouds.add(new Cloud(
 					random.nextInt(WIDTH + 200) - 100,
@@ -67,14 +67,7 @@ public class WeatherSystem {
 					200 + random.nextInt(40)
 			));
 		}
-		for (int i = 0; i < 14; i++) {
-			puddles.add(new Puddle(
-					40 + random.nextInt(WIDTH - 80),
-					420 + random.nextInt(280),
-					30 + random.nextInt(70),
-					12 + random.nextInt(24)
-			));
-		}
+		
 		for (int i = 0; i < 120; i++) {
 			windParticles.add(new WindParticle(
 					random.nextInt(WIDTH),
@@ -169,10 +162,10 @@ public class WeatherSystem {
 		if (weatherTicksLeft > 0) return;
 
 		int roll = random.nextInt(4);
-		isNormal  = (roll == 0);
+		isNormal = (roll == 0);
 		isRaining = (roll == 1);
 		isSnowing = (roll == 2);
-		isWindy   = (roll == 3);
+		isWindy = (roll == 3);
 
 		weatherTicksLeft = MIN_WEATHER_FRAMES
 				+ random.nextInt(MAX_WEATHER_FRAMES - MIN_WEATHER_FRAMES);
@@ -180,7 +173,7 @@ public class WeatherSystem {
 
 	public void updateClouds() {
 		cloudTick++;
-		if (cloudTick % 3 == 0) {   // 1px to the right every 3 frames (~20px/sec)
+		if (cloudTick % 3 == 0) {   // 1px to the right every 3 frames (20px/sec)
 			for (Cloud c : clouds) {
 				c.x += 1;
 				if (c.x > WIDTH + 120) {
@@ -201,32 +194,8 @@ public class WeatherSystem {
 			// base
 			g2.fillOval(x, y + h / 2, (int) (w * 1.6), h);
 			// two bumps on top
-			g2.fillOval(x + w / 6,     y,            w, (int) (h * 1.4));
+			g2.fillOval(x + w / 6, y, w, (int) (h * 1.4));
 			g2.fillOval(x + w / 2 + 4, y + h / 6,    w, (int) (h * 1.2));
-		}
-	}
-
-	public void drawAccumulatedWeather(Graphics2D g2, int rrX, int roadWidth) {
-		if (wetLevel > 0) {
-			for (Puddle p : puddles) {
-				int alpha = (int) (100 * wetLevel);
-				g2.setColor(new Color(70, 130, 190, alpha));
-				g2.fillOval(p.x, p.y, p.w, p.h);
-				g2.setColor(new Color(180, 220, 225, Math.max(alpha / 2, 1)));
-				g2.drawOval(p.x + 5, p.y + 2, p.w - 10, p.h - 4);
-			}
-
-			g2.setColor(new Color(180, 210, 235, (int) (55 * wetLevel)));
-			g2.fillRect(rrX, 90, roadWidth, HEIGHT - 60);
-		}
-
-		if (snowLevel > 0) {
-			int snowHeight = (int) (35 * snowLevel);
-			g2.setColor(new Color(245, 248, 250, 240));
-			g2.fillRect(0, HEIGHT - snowHeight, WIDTH, snowHeight);
-
-			g2.setColor(new Color(250, 250, 255, 220));
-			g2.fillRect(0, HEIGHT - snowHeight - 6, WIDTH, 6);
 		}
 	}
 

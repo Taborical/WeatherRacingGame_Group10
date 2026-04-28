@@ -32,37 +32,48 @@ public class BackgroundManager {
 	public void spawnInitial() {
 		p1BGE.clear();
 		p2BGE.clear();
+		
+		// for the current level, add specific background elements to each player's side,
+		// two to be exact multiplied by 5 dahil yun yung index natin, therefore may 10
+		// elements tayo sa screen at all times that can be and are not seen yet
 		BGConfig cfg = BGConfig.forCurrentLevel();
+		
 		for (int i = 0; i < 5; i++) {
 			p1BGE.add(makeBackgroundElement(cfg, lrX, i * -300));
 			p2BGE.add(makeBackgroundElement(cfg, rrX, i * -300));
 		}
 	}
 
-	/** Update one player's side based on its scroll movement. */
+	// update yung bg elements ng side ng player according sa kanilang y-movement
 	public void updatePlayer(boolean isP1, double movement) {
 		ArrayList<BackgroundElement> elements = isP1 ? p1BGE : p2BGE;
 		int roadX = isP1 ? lrX : rrX;
+		
 		updateBackgroundElements(elements, movement, roadX);
 	}
 
+	// updates kung anong elements magrerespawn further up after despawning
 	private void updateBackgroundElements(ArrayList<BackgroundElement> elements,
 			double movement, int roadX) {
 		BGConfig cfg = BGConfig.forCurrentLevel();
+		
 		for (BackgroundElement bge : elements) {
 			bge.y += movement;
 			if (bge.y > HEIGHT) respawnBackgroundElement(bge, cfg, roadX);
 		}
+		
 		removeOverlappingElements(elements, cfg);
 	}
 
+	
 	private BackgroundElement makeBackgroundElement(BGConfig cfg, int roadX, int initialY) {
 		BackgroundElement bge = new BackgroundElement(0, initialY);
 		bge.type = pickWeightedType(cfg);
 		placeBackgroundElement(bge, cfg, roadX);
 		return bge;
 	}
-
+	// pick type, lahat naman ng element may sariling weight pero ito may nai-rereturn na value
+	// para magamit when respawning that specific bg element
 	private int pickWeightedType(BGConfig cfg) {
 		int roll = random.nextInt(cfg.totalWeight);
 		for (int i = 0; i < cfg.types.length; i++) {
@@ -72,6 +83,8 @@ public class BackgroundManager {
 		return 0;
 	}
 
+	// places the bg elements at the left and right side of each players road, with jitter
+	// being the extra number to randomize placement even more
 	private void placeBackgroundElement(BackgroundElement bge, BGConfig cfg, int roadX) {
 		BGType t = cfg.types[bge.type];
 		int jitter = (t.xScatter > 0) ? random.nextInt(t.xScatter) : 0;
@@ -82,6 +95,7 @@ public class BackgroundManager {
 		}
 	}
 
+	// picks a type tapos it places it further before the player can see it
 	private void respawnBackgroundElement(BackgroundElement bge, BGConfig cfg, int roadX) {
 		bge.type = pickWeightedType(cfg);
 		BGType t = cfg.types[bge.type];
@@ -89,13 +103,15 @@ public class BackgroundManager {
 		placeBackgroundElement(bge, cfg, roadX);
 	}
 
+	// bounding box ng kada bg element type
 	private Rectangle elementBox(BackgroundElement bge, BGConfig cfg) {
 		BGType t = cfg.types[bge.type];
 		return new Rectangle((int) bge.x, (int) bge.y, t.width, t.height);
 	}
 
+	// checks from newest to oldest, kung may later element na mag-ooverlap sa isang pre-rendered na
+	// i-dodrop yon
 	private void removeOverlappingElements(ArrayList<BackgroundElement> elements, BGConfig cfg) {
-		// walk newest-to-oldest; if a later element overlaps any earlier one, drop it
 		for (int i = elements.size() - 1; i >= 0; i--) {
 			Rectangle a = elementBox(elements.get(i), cfg);
 			for (int j = 0; j < i; j++) {
@@ -107,6 +123,7 @@ public class BackgroundManager {
 		}
 	}
 
+	// draw that contaisn lahat ng types per level
 	public void draw(Graphics2D g2, boolean isP1) {
 		ArrayList<BackgroundElement> targetList = isP1 ? p1BGE : p2BGE;
 

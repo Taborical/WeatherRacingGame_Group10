@@ -87,11 +87,7 @@ public class RaceState {
 		}
 	}
 
-	/**
-	 * Returns one of {@link #NO_WINNER}, {@link #P1_WINS}, {@link #P2_WINS},
-	 * {@link #TIE} based on the player camera positions vs {@link #finishY}.
-	 * Updates internal score/state when a winner is found.
-	 */
+	
 	public int checkWinner(int p1CameraY, int p2CameraY) {
 		if (p1CameraY >= finishY || p2CameraY >= finishY) {
 			isRunning = false;

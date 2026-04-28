@@ -71,7 +71,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	private final Rectangle proceedToGame = new Rectangle(550, 510, 170, 60);
 
 	ColorPalette[] palette = ColorPalette.values();
-	private final List<Rectangle> colorsWindowSelection = new ArrayList<>();
+	private final List<Rectangle> colorSelection = new ArrayList<>();
 	private int colorButStartX = 400;
 	private int colorButStartY = 235;
 	private int colorButSize = 50;
@@ -119,11 +119,12 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		addKeyListener(this);
 		addMouseListener(this);
 
+		// car color palette
 		for (int row = 0; row < 7; row++) {
 			for (int col = 0; col < 7; col++) {
 				int currentX = colorButStartX + (col * (colorButSize + colorButSpacing));
 				int currentY = colorButStartY + (row * (colorButSize + colorButSpacing));
-				colorsWindowSelection.add(new Rectangle(currentX, currentY, colorButSize, colorButSize));
+				colorSelection.add(new Rectangle(currentX, currentY, colorButSize, colorButSize));
 			}
 		}
 
@@ -144,7 +145,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 			return;
 		}
 
-		// 60Hz updates
+		// updates every frame on approximately 60fps
 		weather.update();
 		weather.updateClouds();
 		race.updateCountdown();
@@ -303,7 +304,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 	}
 
 	private void checkWinner() {
-		// finish line varies by level — keep RaceState in sync
+		// nagvavary per level yung race state, refer to RaceState sa group10.systems
 		race.updateFinishY(GameSettings.levelSelection);
 
 		int result = race.checkWinner(p1CameraY, p2CameraY);
@@ -341,7 +342,6 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		race.countdownActive = false;
 		transitionTo(ScreenState.MENU, TransitionDirection.LEFT);
 		resetRacePositions();
-		race.statusMessage = "Welcome to the race!";
 	}
 
 	private void newGame() {
@@ -387,6 +387,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 
 	private void playAgain() {
 		obstacles.reset();
+		// removes yung screenshot from the last game
 		race.summarySnapshot = null;
 
 		bgManager.spawnInitial();
@@ -396,6 +397,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		case 3 -> screenState = ScreenState.LEVEL3;
 		case 4 -> screenState = ScreenState.LEVEL4;
 		}
+		
 		resetRacePositions();
 		showControlWindow = true;
 	}
@@ -405,11 +407,12 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+		// check if a transition is happening, before i-paint yung normal screen with normal draw calls
 		if (isSliding && slideSnapshot != null) {
 			float t = 1f - (float) Math.pow(1f - slideProgress, 3);
 			int dx = 0, dy = 0;
 			int nx = 0, ny = 0;
+			
 			switch (direction) {
 			case LEFT -> {
 				dx = -(int) (WIDTH * t);
@@ -428,11 +431,13 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 				ny = -HEIGHT + dy;
 			}
 			}
+			
 			g2.drawImage(slideSnapshot, dx, dy, null);
 			Graphics2D ng = (Graphics2D) g2.create();
 			ng.translate(nx, ny);
 			paintScreen(ng);
 			ng.dispose();
+			
 		} else {
 			paintScreen(g2);
 		}
@@ -563,6 +568,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		drawHeadingText(g2, finishing + " m", Color.WHITE, 28, lrX - 120, 70);
 		drawHeadingText(g2, finishing + " m", Color.WHITE, 28, rrX - 120, 70);
 	}
+	
+	// less stuff compared to drawFullScreen, meant for MENU at LEVELSELECT screenStates
 	private void drawQuickScreen(Graphics2D g2) {
 		Shape fullScreen = g2.getClip();
 		int savedLevel = GameSettings.levelSelection;
@@ -585,6 +592,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		GameSettings.levelSelection = savedLevel;
 	}
 
+	// the slight gradient (gray) on most screens para medyo may smooth transition & less
+	// flatter atmosphere
 	private void drawFadingScreen(Graphics2D g2, int r, int g, int b, String fadeFrom) {
 		int c1v = 0;
 		int c2v = 255;
@@ -657,8 +666,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 			g2.fillOval(910, 180, 600, 600);
 		}
 		
-		for (int i = 0; i < colorsWindowSelection.size(); i++) {
-			Rectangle currentButton = colorsWindowSelection.get(i);
+		for (int i = 0; i < colorSelection.size(); i++) {
+			Rectangle currentButton = colorSelection.get(i);
 			drawColorButton(g2, currentButton, palette[i]);
 		}
 
@@ -854,24 +863,6 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		g2.setTransform(oldTransform);
 	}
 
-	private void drawScoreboard(Graphics2D g2) {
-		GradientPaint box = new GradientPaint(20, 615, new Color(12, 24, 46, 235), 410, 730, new Color(22, 42, 70, 215));
-		g2.setPaint(box);
-		g2.fillRoundRect(20, 615, 390, 115, 20, 20);
-
-		g2.setColor(Color.WHITE);
-		g2.setFont(new Font("Arial", Font.BOLD, 21));
-		g2.drawString("Score Board", 35, 645);
-
-		g2.setFont(new Font("Arial", Font.PLAIN, 17));
-		g2.drawString("Rounds Played: " + race.roundsPlayed, 35, 672);
-		g2.drawString("Player 1 Wins: " + race.player1Wins, 35, 698);
-		g2.drawString("Player 2 Wins: " + race.player2Wins, 210, 698);
-
-		g2.setFont(new Font("Arial", Font.PLAIN, 15));
-		g2.drawString("Status: " + race.statusMessage, 35, 720);
-	}
-
 	private void drawCountdown(Graphics2D g2) {
 		g2.setColor(new Color(0, 0, 0, 150));
 		g2.fillRect(0, 0, WIDTH, HEIGHT);
@@ -977,8 +968,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 		}
 
 		if (screenState == ScreenState.CARSELECT) {
-			for (int i = 0; i < colorsWindowSelection.size(); i++) {
-				if (colorsWindowSelection.get(i).contains(p)) {
+			for (int i = 0; i < colorSelection.size(); i++) {
+				if (colorSelection.get(i).contains(p)) {
 					if (player2IsLocked) return;
 					if (SwingUtilities.isRightMouseButton(e)) {
 						GameSettings.selectedCarColorP2 = palette[i].getHexCode();

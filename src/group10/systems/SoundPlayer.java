@@ -20,7 +20,6 @@ public class SoundPlayer {
 	public SoundPlayer() {
 	}
 
-	/** Play a sound once from the start. If it's already playing, restart it. */
 	public void play(AudioFiles audio) {
 		Clip clip = getClip(audio);
 		if (clip == null) return;
@@ -30,7 +29,6 @@ public class SoundPlayer {
 		clip.start();
 	}
 
-	/** Loop a sound continuously (good for background music). */
 	public void loop(AudioFiles audio) {
 		Clip clip = getClip(audio);
 		if (clip == null) return;
@@ -40,7 +38,6 @@ public class SoundPlayer {
 		clip.loop(Clip.LOOP_CONTINUOUSLY);
 	}
 
-	/** Stop a specific sound if it is playing. */
 	public void stop(AudioFiles audio) {
 		Clip clip = clips.get(audio);
 		if (clip != null && clip.isRunning()) {
@@ -48,54 +45,11 @@ public class SoundPlayer {
 		}
 	}
 
-	/** Stop every sound that has been loaded. */
 	public void stopAll() {
 		for (Clip clip : clips.values()) {
 			if (clip != null && clip.isRunning()) clip.stop();
 		}
 	}
-
-	/** True if the given sound is currently playing. */
-	public boolean isPlaying(AudioFiles audio) {
-		Clip clip = clips.get(audio);
-		return clip != null && clip.isRunning();
-	}
-
-	/** Set master volume between 0.0 (silent) and 1.0 (full). */
-	public void setVolume(float volume) {
-		this.volume = Math.max(0f, Math.min(1f, volume));
-		for (Clip clip : clips.values()) {
-			applyVolume(clip);
-		}
-	}
-
-	public float getVolume() {
-		return volume;
-	}
-
-	public void setMuted(boolean muted) {
-		this.muted = muted;
-		for (Clip clip : clips.values()) {
-			applyVolume(clip);
-		}
-	}
-
-	public boolean isMuted() {
-		return muted;
-	}
-
-	/** Release all clip resources. Call when shutting down. */
-	public void dispose() {
-		for (Clip clip : clips.values()) {
-			if (clip != null) {
-				if (clip.isRunning()) clip.stop();
-				clip.close();
-			}
-		}
-		clips.clear();
-	}
-
-	// --- internal -------------------------------------------------------
 
 	private Clip getClip(AudioFiles audio) {
 		Clip clip = clips.get(audio);
@@ -125,12 +79,10 @@ public class SoundPlayer {
 	}
 
 	private AudioInputStream openStream(String path) throws Exception {
-		// Try classpath resource first (works when packaged in a jar).
 		InputStream raw = SoundPlayer.class.getResourceAsStream(path);
 		if (raw != null) {
 			return AudioSystem.getAudioInputStream(new BufferedInputStream(raw));
 		}
-		// Fallback: try the filesystem (handy during development).
 		String fsPath = path.startsWith("/") ? path.substring(1) : path;
 		File file = new File(fsPath);
 		if (file.exists()) {

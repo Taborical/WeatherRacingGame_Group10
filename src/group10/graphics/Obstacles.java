@@ -146,14 +146,14 @@ public class Obstacles {
 		// BEAK
 		AffineTransform beforeBeak = g2.getTransform();
 
-		// Pivot point = where beak attaches to head
+		// pivot kung san nagaattach yung beak sa ulo fr
 		int pivotX = 23;
 		int pivotY = 33;
 
-		// Rotate around that point
+		// rotate around sa point na yan
 		g2.rotate(Math.toRadians(0), pivotX, pivotY);
 
-		// Beak shape relative to pivot
+		// beak shape relative dun sa pivor
 		Polygon tri = new Polygon();
 		tri.addPoint(pivotX, pivotY);            // tip
 		tri.addPoint(pivotX + 60, pivotY + 20);  // bottom
@@ -207,15 +207,17 @@ public class Obstacles {
 		g2.setTransform(old);	  
 	}
 	
+	// extra helper method kay ostrich para mag-fi-flip siya kada tama sa either side
+	// of the player's wall
 	public static void drawOstrichFacing(Graphics2D g2, int x, int y, double scale,
 			int hitW, boolean facingRight) {
 		if (!facingRight) {
-			drawOstrich(g2, x, y, scale);          // default = facing left
+			drawOstrich(g2, x, y, scale);
 			return;
 		}
 		AffineTransform old = g2.getTransform();
-		g2.translate(x + hitW, y);                 // pivot on the right edge of its hitbox
-		g2.scale(-1, 1);                           // mirror horizontally
+		g2.translate(x + hitW, y);
+		g2.scale(-1, 1);
 		drawOstrich(g2, 0, 0, scale);
 		g2.setTransform(old);
 	}

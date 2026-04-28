@@ -3,7 +3,7 @@ package group10.entities;
 public class Obstacle {
     public double worldY;     // scrolls kasama camera
     public double screenX;    // x within the player's clip
-    public double vx;         // horizontal speed
+    public double vx;         // vertical speed
     public int kind;
     public double scale;
     public int hitW, hitH; // collision box
